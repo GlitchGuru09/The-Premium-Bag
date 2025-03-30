@@ -36,29 +36,33 @@ module.exports.registerUser = async function(req,res){
 }
 
 //login
-module.exports.loginUser = async function(req,res){
+module.exports.loginUser = async function (req, res) {
     try {
-        let {email, password} = req.body;
+        let { email, password } = req.body;
 
-        let user = await userModel.findOne({email: email});
-        if(!user){
-            req.flash("error", "Incorrect Email or Password");
-            return res.status(401).redirect("/")
+        let user = await userModel.findOne({ email: email });
+        if (!user) {
+            return res.status(401).json({ error: "Incorrect Email or Password" });
         }
-        bcrypt.compare(password, user.password, function(err, result){
-            if(result){
-                let token =  generateToken(user);
-                res.cookie("token", token);
-                res.redirect('/shop')
-            }else{
-                req.flash("error", "Incorrect Email or Password");
-                return res.status(401).redirect("/")
+
+        bcrypt.compare(password, user.password, function (err, result) {
+            if (err) {
+                return res.status(500).json({ error: "Internal Server Error" });
             }
-        })
+            if (result) {
+                let token = generateToken(user);
+                res.cookie("token", token);
+                return res.status(200).json({ message: "Login successful"});
+            } else {
+                return res.status(401).json({ error: "Incorrect Email or Password" });
+            }
+        });
     } catch (err) {
-        res.send(err.message);
+        res.status(500).json({ error: err.message });
     }
-}
+};
+
+
 
 //logout
 module.exports.logout = function(req,res){
